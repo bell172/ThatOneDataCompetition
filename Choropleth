@@ -1,0 +1,44 @@
+library(ggplot2)
+library(data.table)
+library(maps)
+data <- read.csv("http://llc.stat.purdue.edu/datafest2018/datafest2018.csv", header = TRUE)
+sort(table(data$admin1))
+ population <- read.csv("/home/bell172/Downloads/us-population-by-state-and-count.csv", header = TRUE)
+ 
+popdf <- data.frame(t(population)) 
+popdf <- popdf[-1,]
+popdf <- subset(popdf, popdf$X1 != "3716727")
+
+
+
+map.states <- map_data('state')
+states <- unique(map.states[,5:6])
+statesne <- subset(states, is.na(states$subregion) | states$subregion == "main" | states$subregion == "south" )
+ #take out 6 non states district of columbia..etc DC PR VI MP GU AS  also no AK or HI
+statesnew <- subset(statesne, statesne$region != "district of columbia")
+dataclean <- subset(data, data$admin1 != "DC"   & data$admin1 != "PR" & data$admin1 != "VI"  & data$admin1 != "MP" & data$admin1 != "GU"  & data$admin1 != "AS"  & data$admin1 != "AK" & data$admin1 != "HI" )
+dataclean$admin1 <- factor(dataclean$admin1)
+table(dataclean$admin1)
+
+#for each state get the number of job applies 
+
+jobapplies <- tapply(dataclean$applies, dataclean$admin1, sum)
+jobapplies
+class(jobapplies)
+
+
+applymap = data.frame(state_names = statesnew$region , applies = jobapplies )
+applymap$appliespercap <- as.numeric(gsub(",",".", applymap$applies)) / as.numeric(gsub(",",".", popdf$X1))
+percapapp <- as.vector(applymap$appliespercap)
+
+
+map.states <- data.table(map.states)
+class(map.states)
+setkey(map.states, region, subregion)
+applymap <- data.table(applymap)
+setkey(applymap,state_names)
+map.df <- map.states[applymap]
+a = scale_fill_gradient(low='#66CCFF',high='#000099', limits = c(0,1)) # my gradient scale
+ggplot(map.df, aes(x=long, y=lat, group = group, fill=appliespercap)) + geom_polygon()+coord_map()+ggtitle("Applies Per Capita") + a
+#states = map_data('state')
+
