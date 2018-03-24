@@ -1,4 +1,4 @@
-jobs <- read.csv('Documents/datafest2018.csv')
+jobs <- read.csv('~/Documents/datafest2018.csv')
 colnames(jobs)
 nrow(jobs)
 View(jobs)
